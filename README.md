@@ -30,7 +30,8 @@ Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
 ---
 
 ## 📦 Project Structure
-ab2screen/
+
+Tab2screen/
 - receiver_to_chromium_v2.py   # HTTP server + Chromium launcher
 -- chrome-extension/
 ---- manifest.json
