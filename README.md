@@ -32,14 +32,21 @@ Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
 
 ### 1️⃣ Install dependencies
 sudo apt install chromium python3
+
+### ⚙️ Start Server
+```bash
+python3 receiver_to_chromium_v2.py 
 --behavior replace        # replace | multi | reuse
 --chromium-cmd chromium
 --x11                     # disable Wayland
 --chromium-arg="--kiosk"
-
-curl http://raspberry:8080/health
-
-🌐 Chrome Extension – Setup
+```
+### ✅Check
+```bash
+  curl http://raspberry:8080/health
+```
+## 🌐 Chrome Extension – Setup
+```chromium
 Open chrome://extensions
 Enable Developer mode
 Click Load unpacked
@@ -49,28 +56,29 @@ Set your Raspberry Pi address:
 xxx.xxx.xxx.xxx:012345
 
 Click the extension icon to send the tab 🚀
+```
 
 ⏱ Video Timestamp Support
 Tab2Screen automatically detects HTML5 video playback:
 Copier le tableau
 
 Platform Support
-YouTube✅
-Vimeo✅
-Twitch VOD✅
-Generic HTML5 video✅
+- YouTube✅
+- Vimeo✅
+- Twitch VOD✅
+- Generic HTML5 video✅
 
 Live streams ❌ (by design)
 
 Example generated URL:
 https://www.youtube.com/watch?v=xxxx&t=127s
 
-🔐 Security Notes
+## 🔐 Security Notes
 Designed for local network usage
 No authentication by default
 You may restrict binding to 127.0.0.1 or add a token header if exposed
 
-🚀 Roadmap / Ideas
+## 🚀 Roadmap / Ideas
 🔄 Play / Pause synchronization
 📺 Multi-screen sync
 🔐 Auth token support
@@ -78,9 +86,9 @@ You may restrict binding to 127.0.0.1 or add a token header if exposed
 📱 Mobile sender
 🧠 Chromium DevTools reuse mode
 
-🧑‍💻 License
+## 🧑‍💻 License
 MIT ❤️
 
-🙌 Credits
+## 🙌 Credits
 Created for personal media & presentation workflows on Raspberry Pi.
 Contributions welcome!
