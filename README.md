@@ -20,8 +20,7 @@ Perfect for:
 ---
 ## 🧩 How It Works
 Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
-        │                                  │
-        └─ Reads video.currentTime ───────┘
+
         
 1. Click the extension icon
 2. The current tab URL is captured
