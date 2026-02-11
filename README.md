@@ -90,7 +90,7 @@ You may restrict binding to 127.0.0.1 or add a token header if exposed
 🧠 Chromium DevTools reuse mode
 
 🧑‍💻 License
-xxxx ❤️
+MIT ❤️
 
 🙌 Credits
 Created for personal media & presentation workflows on Raspberry Pi.
