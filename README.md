@@ -1,6 +1,6 @@
-# 🖥️ Tab2Screen
+# 🖥️ Tab2RemoteScreen
 
-**Tab2Screen** lets you send the current browser tab from your desktop Chrome to a remote screen (Raspberry Pi, mini‑PC, HTPC, kiosk…) running Chromium.
+**Tab2RemoteScreen** lets you send the current browser tab from your desktop Chrome to a remote screen (Raspberry Pi, mini‑PC, HTPC, kiosk…) running Chromium.
 Perfect for:
 - 📺 TVs & external displays
 - 🍓 Raspberry Pi media screens
