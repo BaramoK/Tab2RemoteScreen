@@ -31,12 +31,12 @@ Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
 
 ## 📦 Project Structure
 ab2screen/
-├── receiver_to_chromium_v2.py   # HTTP server + Chromium launcher
-├── chrome-extension/
-│   ├── manifest.json
-│   ├── background.js
-│   ├── options.html
-│   └── options.js
+- receiver_to_chromium_v2.py   # HTTP server + Chromium launcher
+-- chrome-extension/
+---- manifest.json
+---- background.js
+---- options.html
+---- options.js
 
 ---
 ## 🍓 Raspberry Pi – Server Setup
