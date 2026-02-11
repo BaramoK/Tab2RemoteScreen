@@ -29,6 +29,7 @@ Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
 4. The URL is sent to the Raspberry Pi
 5. Chromium opens the page at the same moment
 ---
+
 ## 📦 Project Structure
 ab2screen/
 ├── receiver_to_chromium_v2.py   # HTTP server + Chromium launcher
