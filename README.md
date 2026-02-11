@@ -21,23 +21,11 @@ Perfect for:
 ## 🧩 How It Works
 Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
 
-        
 1. Click the extension icon
 2. The current tab URL is captured
 3. If a video is playing, its timestamp is added
 4. The URL is sent to the Raspberry Pi
 5. Chromium opens the page at the same moment
----
-
-## 📦 Project Structure
-
-Tab2screen/
-- receiver_to_chromium_v2.py   # HTTP server + Chromium launcher
--- chrome-extension/
----- manifest.json
----- background.js
----- options.html
----- options.js
 
 ---
 ## 🍓 Raspberry Pi – Server Setup
