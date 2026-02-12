@@ -1,6 +1,6 @@
 chrome.action.onClicked.addListener(async (tab) => {
   chrome.storage.sync.get(
-    { raspberryHost: "pimok:7777" },
+    { raspberryHost: "" },
     async (config) => {
 
       let finalUrl = tab.url;
@@ -34,6 +34,12 @@ chrome.action.onClicked.addListener(async (tab) => {
 
       } catch (e) {
         console.warn("Impossible de lire le timestamp", e);
+      }
+
+      // If no host is configured, don't attempt to send anything.
+      if (!config.raspberryHost) {
+        console.warn("Aucun raspberryHost configuré — ouvrez la page d'options pour définir l'adresse.");
+        return;
       }
 
       const endpoint = `http://${config.raspberryHost}`;
