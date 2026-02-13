@@ -68,7 +68,8 @@ class ChromiumManager:
         self._lock = threading.Lock()
         self._proc: subprocess.Popen | None = None
 
-    def _launch(self, url: str) -> subprocess.Popen:
+
+    def _launch(self, url: str, kiosk: bool = False) -> subprocess.Popen:
         env = os.environ.copy()
         if self.display is not None:
             env["DISPLAY"] = self.display
@@ -81,15 +82,49 @@ class ChromiumManager:
         # Profil dédié pour ne pas casser/locker ton profil principal
         #cmd += [f"--user-data-dir={self.user_data_dir}"]
 
-        # Mode "app" (fenêtre minimaliste)
-        cmd += [f'--app={url}', "--start-maximized"]
+        # Mode d'ouverture :
+        # - En mode normal on utilise --app=<url> + --start-maximized (fenêtre minimaliste)
+        # - En mode kiosk on lance Chromium en plein écran avec --kiosk et l'URL en argument
+        if kiosk:
+            # En kiosk, on passe l'URL en argument (positionnel) et les flags --kiosk
+            # et --start-fullscreen pour maximiser la compatibilité entre environnements
+            # (certains builds/WM exigent --start-fullscreen pour un vrai plein écran).
+            # Utilise aussi un profil dédié et désactive quelques popups qui peuvent
+            # empêcher le plein écran immédiat.
+            kiosk_flags = [
+                "--kiosk",
+                "--start-fullscreen",
+                # Ne pas forcer user-data-dir (préférence utilisateur)
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--disable-session-crashed-bubble",
+                "--disable-infobars",
+            ]
+            cmd += kiosk_flags + [url]
+        else:
+            cmd += [f'--app={url}', "--start-maximized"]
 
         # Args supplémentaires optionnels
-        cmd += self.extra_args
+        # En mode kiosk, filtrer certains args qui contredisent kiosk (ex: --start-maximized, --app=...)
+        args_to_add = []
+        if kiosk:
+            for a in self.extra_args:
+                if a == "--start-maximized":
+                    continue
+                if a == "--start-fullscreen":
+                    continue
+                if a.startswith("--app="):
+                    continue
+                args_to_add.append(a)
+        else:
+            args_to_add = list(self.extra_args)
 
+        cmd += args_to_add
+
+        print(f"[LAUNCH] launching Chromium (kiosk={kiosk}): {' '.join(cmd)}")
         proc = subprocess.Popen(cmd, env=env)
 
-        if self.maximize:
+        if self.maximize and not kiosk:
             # wlrctl: optionnel, pas bloquant
             def _maximize_later():
                 time.sleep(self.maximize_delay)
@@ -103,10 +138,11 @@ class ChromiumManager:
 
         return proc
 
-    def open_url(self, url: str) -> str:
+
+    def open_url(self, url: str, kiosk: bool = False) -> str:
         with self._lock:
             if self.behavior == "multi":
-                self._launch(url)
+                self._launch(url, kiosk=kiosk)
                 return "opened-new"
 
             if self.behavior == "reuse":
@@ -115,7 +151,7 @@ class ChromiumManager:
 
             # behavior == replace
             self._terminate_locked()
-            self._proc = self._launch(url)
+            self._proc = self._launch(url, kiosk=kiosk)
             return "replaced"
 
     def _terminate_locked(self):
@@ -174,11 +210,25 @@ class Handler(BaseHTTPRequestHandler):
             body = self._read_body()
             ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
 
+            kiosk = False
+            url = None
+            payload = None
             if ctype == "application/json":
                 payload = json.loads(body.decode("utf-8", errors="replace"))
                 url = (payload.get("url") or "").strip()
+                kiosk = bool(payload.get("kiosk", False))
             else:
+                # legacy: body could be the raw URL string
                 url = body.decode("utf-8", errors="replace").strip()
+
+            # debug log: what we received
+            try:
+                if payload is not None:
+                    print(f"[HTTP] POST JSON received: url={url!r}, kiosk={kiosk}")
+                else:
+                    print(f"[HTTP] POST raw received: url={url!r}")
+            except Exception:
+                pass
 
             ok, reason = is_valid_url(url)
             if not ok:
@@ -188,7 +238,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": reason}).encode("utf-8"))
                 return
 
-            result = self.server.chromium_mgr.open_url(url)
+            # si le client n'a pas précisé kiosk, on tombe sur la valeur par défaut du serveur
+            if not kiosk and getattr(self.server, "default_kiosk", False):
+                kiosk = True
+
+            result = self.server.chromium_mgr.open_url(url, kiosk=kiosk)
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -225,6 +279,8 @@ def main():
     #                    help="Profil dédié pour ce service (évite d'impacter ton profil perso)")
     parser.add_argument("--chromium-arg", action="append", default=[],
                         help='Argument Chromium additionnel (répétable), ex: --chromium-arg="--kiosk"')
+    parser.add_argument("--default-kiosk", action="store_true",
+                        help="Ouvrir en mode kiosk par défaut si le payload ne précise pas 'kiosk'")
 
     args = parser.parse_args()
 
@@ -245,10 +301,12 @@ def main():
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     server.max_body = args.max_body
     server.chromium_mgr = chromium_mgr
+    server.default_kiosk = args.default_kiosk
 
     print(f"✅ Serveur en écoute sur http://{args.host}:{args.port}")
     print(f"➡️  Chromium: {chromium_path}")
     print(f"🧠 behavior: {args.behavior}")
+    print(f"🔒 default kiosk: {args.default_kiosk}")
 
     try:
         server.serve_forever()

@@ -1,6 +1,6 @@
 chrome.action.onClicked.addListener(async (tab) => {
   chrome.storage.sync.get(
-    { raspberryHost: "" },
+    { serverHost: "", defaultKiosk: false },
     async (config) => {
 
       let finalUrl = tab.url;
@@ -37,18 +37,22 @@ chrome.action.onClicked.addListener(async (tab) => {
       }
 
       // If no host is configured, don't attempt to send anything.
-      if (!config.raspberryHost) {
-        console.warn("Aucun raspberryHost configuré — ouvrez la page d'options pour définir l'adresse.");
+      if (!config.serverHost) {
+        console.warn("Aucun serveur configuré — ouvrez la page d'options pour définir l'adresse.");
         return;
       }
 
-      const endpoint = `http://${config.raspberryHost}`;
+      const endpoint = `http://${config.serverHost}`;
+
+      // Toujours envoyer du JSON { url, kiosk } — plus simple côté serveur.
+      const body = JSON.stringify({ url: finalUrl, kiosk: !!config.defaultKiosk });
 
       fetch(endpoint, {
         method: "POST",
-        body: finalUrl
+        headers: { 'Content-Type': 'application/json' },
+        body
       }).then(r => {
-        console.log("Envoyé", finalUrl);
+        console.log("Envoyé", finalUrl, "kiosk=", !!config.defaultKiosk);
       }).catch(console.error);
     }
   );

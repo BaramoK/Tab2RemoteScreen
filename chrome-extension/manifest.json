@@ -2,14 +2,15 @@
     "manifest_version": 3,
     "name": "Tab2RemoteScreen",
     "version": "1.2",
-    "description": "Envoie l’URL courante (avec timestamp vidéo) vers un Raspberry Pi",
+    "description": "Envoie l’URL courante (avec timestamp vidéo) vers un serveur distant",
+    "host_permissions": [
+        "http://*/*"
+    ],
     "permissions": [
         "activeTab",
         "storage",
-        "scripting"
-    ],
-    "host_permissions": [
-        "http://*/*"
+        "scripting",
+        "alarms"
     ],
     "background": {
         "service_worker": "background.js"
@@ -22,7 +23,7 @@
         "128": "icons/icon128.png"
     },
     "action": {
-        "default_title": "Envoyer au Raspberry",
+        "default_title": "Envoyer au serveur distant",
         "default_icon": {
             "16": "icons/icon16.png",
             "32": "icons/icon32.png",

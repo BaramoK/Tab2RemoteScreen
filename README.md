@@ -1,11 +1,11 @@
 # 🖥️ Tab2RemoteScreen
 
-**Tab2RemoteScreen** lets you send the current browser tab from your desktop Chrome to a remote screen (Raspberry Pi, mini‑PC, HTPC, kiosk…) running Chromium.
+**Tab2RemoteScreen** lets you send the current browser tab from your desktop Chrome to a remote screen (mini‑PC, HTPC, kiosk, single‑board computer…) running Chromium.
 
 Perfect for:
 
 - 📺 TVs & external displays  
-- 🍓 Raspberry Pi media screens  
+ - Media screens (single‑board computers, mini‑PCs)
 - 🧑‍🏫 Presentations  
 - 🎥 Watching YouTube / Vimeo / Twitch on another screen  
 
@@ -20,7 +20,7 @@ Perfect for:
 - 🧠 Single‑window or multi‑window Chromium management  
 - 🌐 Lightweight HTTP server (no framework)  
 - 🖥 Works with X11 or Wayland  
-- 🍓 Optimized for Raspberry Pi  
+ - Optimized for embedded displays
 - 🔐 No cloud, fully local  
 
 ---
@@ -28,18 +28,18 @@ Perfect for:
 ## 🧩 How It Works
 
 ```
-Chrome Extension ──► HTTP POST ──► Raspberry Pi ──► Chromium
+Chrome Extension ──► HTTP POST ──► Remote Server ──► Chromium
 ```
 
 1. Click the extension icon  
 2. The current tab URL is captured  
 3. If a video is playing, its timestamp is added  
-4. The URL is sent to the Raspberry Pi  
+4. The URL is sent to the remote server
 5. Chromium opens the page at the same moment  
 
 ---
 
-# 🍓 Raspberry Pi – Server Setup
+# Server – Setup
 
 ## 1️⃣ Install Dependencies
 
@@ -64,7 +64,7 @@ python3 receiver_to_chromium_v2.py \
 ## ✅ Health Check
 
 ```bash
-curl http://raspberry:8080/health
+curl http://localhost:8080/health
 ```
 
 ---
@@ -77,7 +77,7 @@ curl http://raspberry:8080/health
 3. Click "Load unpacked"
 4. Select the chrome-extension/ folder
 5. Open extension options
-6. Set your Raspberry Pi address:
+6. Set your server address (host:port):
    xxx.xxx.xxx.xxx:012345
 ```
 
@@ -353,6 +353,6 @@ MIT ❤️
 
 # 🙌 Credits
 
-Created for personal media & presentation workflows on Raspberry Pi.  
+Created for personal media & presentation workflows on small displays and kiosks.  
 
 **Contributions welcome!** 🚀
