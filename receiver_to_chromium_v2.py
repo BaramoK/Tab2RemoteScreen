@@ -99,6 +99,15 @@ class ChromiumManager:
                 "--no-default-browser-check",
                 "--disable-session-crashed-bubble",
                 "--disable-infobars",
+                # Réduire les logs/activités réseau liées aux services Google (GCM/push/etc.)
+                # qui génèrent des erreurs comme DEPRECATED_ENDPOINT lorsque Chromium
+                # n'est pas configuré pour un user profile complet.
+                "--disable-background-networking",
+                "--disable-component-update",
+                "--disable-sync",
+                "--disable-background-mode",
+                "--disable-features=PushMessaging",
+                "--disable-gcm"
             ]
             cmd += kiosk_flags + [url]
         else:
@@ -122,7 +131,14 @@ class ChromiumManager:
         cmd += args_to_add
 
         print(f"[LAUNCH] launching Chromium (kiosk={kiosk}): {' '.join(cmd)}")
-        proc = subprocess.Popen(cmd, env=env)
+        # Chromium écrit beaucoup de logs/errors sur stderr (ex: GCM DEPRECATED_ENDPOINT)
+        # qui ne sont pas utiles pour l'utilisateur de ce service. Redirigeons les
+        # sorties de Chromium vers /dev/null pour garder la sortie du serveur propre.
+        try:
+            proc = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            # fallback non-bloquant: si redirection impossible, lancer sans redirection
+            proc = subprocess.Popen(cmd, env=env)
 
         if self.maximize and not kiosk:
             # wlrctl: optionnel, pas bloquant
