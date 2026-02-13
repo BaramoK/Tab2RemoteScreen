@@ -80,7 +80,7 @@ Default values:
 
 1. Open chrome://extensions in Chrome
 2. Enable Developer mode
-3. Click "Load unpacked" and select the chrome-extension/ folder
+3. Click "Load unpacked" and select the Tab2RemoteScreen/ folder
 4. Open the extension options and set your server address (host:port)
 
 Click the extension icon to send the current tab to the remote screen.
