@@ -1,260 +1,136 @@
 # 🖥️ Tab2RemoteScreen
 
-**Tab2RemoteScreen** lets you send the current browser tab from your desktop Chrome to a remote screen (mini‑PC, HTPC, kiosk, single‑board computer…) running Chromium.
+Tab2RemoteScreen makes it easy to send the current browser tab from a desktop Chrome to a remote display (mini‑PC, HTPC, kiosk, or single‑board computer) running Chromium.
 
-Perfect for:
+Use cases:
 
-- 📺 TVs & external displays  
- - Media screens (single‑board computers, mini‑PCs)
-- 🧑‍🏫 Presentations  
-- 🎥 Watching YouTube / Vimeo / Twitch on another screen  
+- 📺 TVs and external displays
+- 🧑‍🏫 Presentations
+- 🎥 Watching YouTube, Vimeo or Twitch VODs on another screen
 
-✅ Supports **video timestamp transfer** (YouTube, HTML5 video, VODs)
+It supports transferring video timestamps when possible so playback resumes at the same position on the remote screen.
 
 ---
 
 ## ✨ Features
 
-- 🚀 One‑click send from Chrome  
-- ⏱ Preserves video playback time when possible  
-- 🧠 Single‑window or multi‑window Chromium management  
-- 🌐 Lightweight HTTP server (no framework)  
-- 🖥 Works with X11 or Wayland  
- - Optimized for embedded displays
-- 🔐 No cloud, fully local  
+- 🚀 One‑click send from Chrome
+- ⏱ Keeps video playback time when available
+- 🧠 Single‑window or multi‑window Chromium control
+- 🌐 Lightweight HTTP server (no external framework)
+- 🖥 Works on X11 and Wayland (optimized for embedded displays)
+- 🔐 Local network only — no cloud dependency
 
 ---
 
-## 🧩 How It Works
+# 🧩 How it works
 
-```
-Chrome Extension ──► HTTP POST ──► Remote Server ──► Chromium
-```
+Chrome extension → HTTP POST → Server → Chromium
 
-1. Click the extension icon  
-2. The current tab URL is captured  
-3. If a video is playing, its timestamp is added  
-4. The URL is sent to the remote server
-5. Chromium opens the page at the same moment  
+1. Click the extension icon
+2. Extension captures the current tab URL
+3. If a video is playing, the extension includes the playback timestamp
+4. The URL (and optional timestamp) is sent to the server
+5. The server launches Chromium on the remote device and opens the URL
 
 ---
 
-# Server – Setup
+# ⚙️ Server — Quick setup
 
-## 1️⃣ Install Dependencies
+1. Install dependencies (example for Debian/Ubuntu):
 
 ```bash
 sudo apt install chromium python3
 ```
 
----
-
-## ⚙️ Start Server
+2. Start the server (example):
 
 ```bash
 python3 receiver_to_chromium_v2.py \
-  --behavior replace        # replace | multi | reuse
-  --chromium-cmd chromium
-  --x11                     # disable Wayland
+  --behavior replace \
+  --chromium-cmd chromium \
+  --x11 \
   --chromium-arg="--kiosk"
 ```
 
----
-
-## ✅ Health Check
+Check the server health:
 
 ```bash
 curl http://localhost:8080/health
 ```
 
----
-
-# 🌐 Chrome Extension – Setup
-
-```
-1. Open chrome://extensions
-2. Enable Developer mode
-3. Click "Load unpacked"
-4. Select the chrome-extension/ folder
-5. Open extension options
-6. Set your server address (host:port):
-   xxx.xxx.xxx.xxx:012345
-```
-
-Click the extension icon to send the tab 🚀
-
----
-
-# 🚀 Basic Launch
+Default launch (uses sensible defaults):
 
 ```bash
 ./receiver_to_chromium_v2.py
 ```
 
-### Default Values
+Default values:
 
-- Host: `0.0.0.0`  
-- Port: `8080`  
-- Behavior: `replace`  
-- Wayland enabled  
-- `DISPLAY=:0`  
-- Auto‑maximize enabled  
-
----
-
-# ⚙️ Available Options
+- Host: 0.0.0.0
+- Port: 8080
+- Behavior: replace
+- Wayland enabled by default
+- DISPLAY=:0
+- Auto‑maximize enabled
 
 ---
 
-## 🌐 Network
+# 🌐 Chrome extension — Installation
 
-### `--host`
+1. Open chrome://extensions in Chrome
+2. Enable Developer mode
+3. Click "Load unpacked" and select the chrome-extension/ folder
+4. Open the extension options and set your server address (host:port)
 
-IP address to bind the HTTP server to:
-
-```bash
---host 0.0.0.0
-```
-
-### `--port`
-
-Listening port:
-
-```bash
---port 8080
-```
+Click the extension icon to send the current tab to the remote screen.
 
 ---
 
-## 🧠 Chromium Window Behavior
 
-### `--behavior`
+## ⚙️ Command line options
 
-Controls how Chromium instances are handled:
+Network
 
-```bash
---behavior multi
---behavior replace
---behavior reuse
-```
+- --host: IP address to bind (default: 0.0.0.0)
+- --port: Listening port (default: 8080)
 
-| Mode      | Description |
-|-----------|------------|
-| `multi`   | Opens a new Chromium window on every POST |
-| `replace` | Closes the previous window and launches a new one (default) |
-| `reuse`   | Falls back to `replace` (true reuse via CDP not implemented) |
+Chromium window behavior
 
----
+- --behavior [multi|replace|reuse]
+  - multi: open a new Chromium window for each POST
+  - replace: close the previous window and launch a new one (default)
+  - reuse: currently falls back to replace (true reuse via CDP not implemented)
 
-## 🌍 Display (Wayland / X11)
+Display (Wayland / X11)
 
-### ✅ Wayland (default)
+- Wayland is used by default. When using Wayland the script adds:
 
-Automatically adds:
+  --enable-features=UseOzonePlatform
+  --ozone-platform=wayland
 
-```
---enable-features=UseOzonePlatform
---ozone-platform=wayland
-```
+- --x11: force X11 (disables Wayland/Ozone flags)
+- --display: set the DISPLAY environment variable (e.g. --display :0). Use --display "" to avoid setting DISPLAY.
 
-### ❌ Force X11
+Window maximization
 
-```bash
---x11
-```
+- --no-maximize: disable automatic maximize
+- --maximize-delay <seconds>: delay before maximize (default: 0.8)
 
-Disables Wayland/Ozone flags.
+HTTP limits
 
----
+- --max-body <bytes>: maximum HTTP body size (default: 4096). Exceeding this returns HTTP 413.
 
-### `--display`
+Chromium configuration
 
-Sets the `DISPLAY` environment variable:
-
-```bash
---display :0
-```
-
-To avoid setting `DISPLAY` at all:
-
-```bash
---display ""
-```
+- --chromium-cmd <path>: path to Chromium binary. If omitted, the script tries `chromium` then `chromium-browser`.
+- --chromium-arg: repeatable, adds extra arguments to Chromium (examples: --chromium-arg="--kiosk", --chromium-arg="--incognito").
 
 ---
 
-## 🖥️ Window Maximization
+## Examples
 
-### ❌ Disable automatic maximize
-
-```bash
---no-maximize
-```
-
-### ⏱ Delay before maximize (wlrctl)
-
-```bash
---maximize-delay 1.2
-```
-
-Default: `0.8` seconds
-
----
-
-## 📦 Maximum HTTP Body Size
-
-```bash
---max-body 4096
-```
-
-Default: `4096` bytes  
-If exceeded → HTTP `413` error.
-
----
-
-## 🌐 Chromium Configuration
-
-### `--chromium-cmd`
-
-Specify the Chromium binary manually:
-
-```bash
---chromium-cmd /usr/bin/chromium
-```
-
-If not provided, the script tries:
-
-- `chromium`
-- `chromium-browser`
-
----
-
-### `--chromium-arg` (repeatable ✅)
-
-Adds additional Chromium arguments.
-
-Examples:
-
-```bash
---chromium-arg="--kiosk"
---chromium-arg="--incognito"
---chromium-arg="--disable-infobars"
-```
-
-Full example:
-
-```bash
-./receiver_to_chromium_v2.py \
-  --behavior replace \
-  --chromium-arg="--kiosk" \
-  --chromium-arg="--incognito"
-```
-
----
-
-# 🧪 Full Examples
-
-## Kiosk Mode (Wayland)
+Kiosk mode (Wayland):
 
 ```bash
 ./receiver_to_chromium_v2.py \
@@ -262,9 +138,7 @@ Full example:
   --chromium-arg="--kiosk"
 ```
 
----
-
-## Multi‑Window Mode with X11
+Multi‑window mode with X11:
 
 ```bash
 ./receiver_to_chromium_v2.py \
@@ -272,9 +146,7 @@ Full example:
   --x11
 ```
 
----
-
-## Localhost‑Only Server
+Localhost‑only server:
 
 ```bash
 ./receiver_to_chromium_v2.py \
@@ -284,39 +156,11 @@ Full example:
 
 ---
 
-# 🧾 Quick Summary
+## ⏱ Video timestamp support
 
-```bash
---host
---port
---behavior [multi|replace|reuse]
---chromium-cmd
---x11
---display
---no-maximize
---maximize-delay
---max-body
---chromium-arg   # repeatable
-```
+The extension detects HTML5 video playback and appends a timestamp when possible. Supported sources include YouTube, Vimeo, Twitch VODs and generic HTML5 video. Live streams are not supported.
 
----
-
-# ⏱ Video Timestamp Support
-
-Tab2RemoteScreen automatically detects HTML5 video playback.
-
-### ✅ Supported Platforms
-
-- YouTube  
-- Vimeo  
-- Twitch VOD  
-- Generic HTML5 video  
-
-### ❌ Not Supported
-
-- Live streams (by design)
-
-### Example Generated URL
+Example generated URL:
 
 ```
 https://www.youtube.com/watch?v=xxxx&t=127s
@@ -324,35 +168,30 @@ https://www.youtube.com/watch?v=xxxx&t=127s
 
 ---
 
-# 🔐 Security Notes
+## 🔐 Security notes
 
-- Designed for **local network usage**
-- No authentication by default
-- You may:
-  - Restrict binding to `127.0.0.1`
-  - Add a token header if exposed externally
+- This tool is designed for local network use. There is no authentication by default.
+- If you expose the server externally, consider binding to 127.0.0.1 behind a reverse proxy, or implement a token header.
 
 ---
 
-# 🚀 Roadmap / Ideas
+## 🚀 Roadmap
 
-- 🔄 Play / Pause synchronization  
-- 📺 Multi‑screen sync  
-- 🔐 Auth token support  
-- 🖱 Remote control (keyboard / mouse)  
-- 📱 Mobile sender  
-- 🧠 Chromium DevTools reuse mode  
-
----
-
-# 🧑‍💻 License
-
-MIT ❤️  
+- Play/pause synchronization
+- Multi‑screen synchronization
+- Authentication token support
+- Remote control (keyboard/mouse)
+- Mobile sender app
+- Chromium DevTools reuse mode (true reuse)
 
 ---
 
-# 🙌 Credits
+## 🧾 License
 
-Created for personal media & presentation workflows on small displays and kiosks.  
+MIT 💕
 
-**Contributions welcome!** 🚀
+---
+
+## 🙌 Credits
+
+Built for personal media and presentation workflows on small displays and kiosks. Contributions are welcome.
