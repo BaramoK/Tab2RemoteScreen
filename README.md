@@ -46,7 +46,7 @@ sudo apt install chromium python3
 2. Start the server (example):
 
 ```bash
-python3 receiver_to_chromium_v2.py \
+python3 Tab2RemoteServer.py \
   --behavior replace \
   --chromium-cmd chromium \
   --x11 \
@@ -62,7 +62,7 @@ curl http://localhost:8080/health
 Default launch (uses sensible defaults):
 
 ```bash
-./receiver_to_chromium_v2.py
+./Tab2RemoteServer.py
 ```
 
 Default values:
@@ -84,6 +84,36 @@ Default values:
 4. Open the extension options and set your server address (host:port)
 
 Click the extension icon to send the current tab to the remote screen.
+
+---
+
+## ⚙️ Optional: systemd service
+
+You can run the server as a systemd service on Linux. Example unit file (/etc/systemd/system/tab2remoteserver.service):
+
+```ini
+[Unit]
+Description=Tab2RemoteServer
+After=network.target
+
+[Service]
+Type=simple
+User=media
+WorkingDirectory=/opt/Tab2RemoteScreen
+ExecStart=/usr/bin/python3 /opt/Tab2RemoteScreen/Tab2RemoteServer.py --host 0.0.0.0 --port 8080 --behavior replace
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+After creating the unit file:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now tab2remoteserver.service
+sudo journalctl -u tab2remoteserver -f
+```
 
 ---
 
@@ -133,7 +163,7 @@ Chromium configuration
 Kiosk mode (Wayland):
 
 ```bash
-./receiver_to_chromium_v2.py \
+./Tab2RemoteServer.py \
   --behavior replace \
   --chromium-arg="--kiosk"
 ```
@@ -141,7 +171,7 @@ Kiosk mode (Wayland):
 Multi‑window mode with X11:
 
 ```bash
-./receiver_to_chromium_v2.py \
+./Tab2RemoteServer.py \
   --behavior multi \
   --x11
 ```
@@ -149,7 +179,7 @@ Multi‑window mode with X11:
 Localhost‑only server:
 
 ```bash
-./receiver_to_chromium_v2.py \
+./Tab2RemoteServer.py \
   --host 127.0.0.1 \
   --port 9090
 ```
