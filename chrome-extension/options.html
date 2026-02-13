@@ -1,25 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Configuration Raspberry</title>
+  <title>Configuration - Tab2RemoteScreen</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input { width: 100%; padding: 6px; }
-    button { margin-top: 10px; }
+    /* light theme defaults */
+    :root{--bg:#f7f9fc;--card:#ffffff;--accent:#2b7cff;--muted:#6b7280;--success:#10b981;--text:#0f172a}
+    /* dark theme overrides when system prefers dark */
+    @media (prefers-color-scheme: dark) {
+      :root{--bg:#071025;--card:#071227;--accent:#58a6ff;--muted:#97a6c0;--success:#22c55e;--text:#e6eef8}
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); margin:0; padding:24px; color:var(--text)}
+    .container{max-width:720px; margin:24px auto}
+    .card{background:var(--card); padding:20px; border-radius:12px; box-shadow:0 6px 20px rgba(16,24,40,0.06)}
+    h1{margin:0 0 6px; font-size:18px}
+    .small{font-size:13px; color:var(--muted); margin:0 0 12px}
+    .form-row{display:flex; flex-direction:column; gap:6px; margin-bottom:12px}
+    label{font-weight:600}
+    .input{display:block; width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6e9ef; font-size:14px}
+    .checkbox-row{display:flex; align-items:center; gap:8px}
+    .note{color:var(--muted); font-size:13px}
+    .actions{display:flex; gap:8px; margin-top:12px; align-items:center}
+    .btn{cursor:pointer; padding:8px 12px; border-radius:8px; border:0; font-weight:700}
+    .btn-primary{background:var(--accent); color:#fff}
+    .btn-secondary{background:rgba(46, 101, 255, 0.08); color:var(--accent)}
+    .status{margin-left:8px; color:var(--success); font-size:13px; display:none}
+    @media (max-width:480px){.container{padding:12px}}
   </style>
 </head>
 <body>
-  <h2>Serveur distant</h2>
-  <label>
-    Adresse IP / Host :
-    <input id="host" placeholder="192.168.1.42:8080">
-  </label>
-  <label style="display:block; margin-top:10px;">
-    <input type="checkbox" id="kiosk"> Ouvrir en mode kiosk par défaut
-  </label>
-  <button id="save">💾 Sauvegarder</button>
+  <div class="container">
+    <div class="card">
+      <h1>Configuration du module navigateur</h1>
+      <p class="small">Paramètres pour la connexion au serveur distant</p>
 
+      <div class="form-row">
+        <label for="host">Adresse IP / Host</label>
+        <input id="host" class="input" placeholder="ex: 192.168.1.42:8080">
+        <div class="note">Indiquez l'adresse du serveur distant (inclure le port si nécessaire)</div>
+      </div>
+
+      <div class="form-row">
+        <label class="checkbox-row"><input type="checkbox" id="kiosk"> Ouvrir en mode kiosk par défaut</label>
+        <div class="note">Si activé, le navigateur ouvrira la fenêtre en plein écran.</div>
+      </div>
+
+      <div class="actions">
+        <button id="save" class="btn btn-primary">💾 Sauvegarder</button>
+        <button id="reset" class="btn btn-secondary">Réinitialiser</button>
+        <div id="status" class="status">✓ Enregistré</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keep the UI in sync with system theme (for potential future JS-driven changes) -->
+  <script>
+    (function(){
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      function update(e){
+        const dark = e && typeof e.matches === 'boolean' ? e.matches : mq.matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      }
+      try{ mq.addEventListener('change', update); }catch(e){ mq.addListener(update); }
+      update();
+    })();
+  </script>
   <script src="option.js"></script>
 </body>
 </html>
