@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Choisir le serveur</title>
+  <style>
+    /* light theme defaults */
+    :root{--bg:#f7f9fc;--card:#ffffff;--accent:#2b7cff;--muted:#6b7280;--text:#0f172a}
+    @media (prefers-color-scheme: dark) { :root{--bg:#071025;--card:#071227;--accent:#58a6ff;--muted:#97a6c0;--text:#e6eef8} }
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:12px;min-width:260px;background:var(--bg);color:var(--text)}
+    .list{display:flex;flex-direction:column;gap:8px}
+    .item{display:flex;align-items:center;gap:8px;background:var(--card);padding:8px;border-radius:8px}
+    .host{flex:1}
+    button{padding:6px 8px;border-radius:6px;border:0;cursor:pointer}
+    .primary{background:var(--accent);color:#fff}
+  </style>
+</head>
+<body>
+  <h3>Serveurs</h3>
+  <div id="list" class="list"></div>
+  <div style="margin-top:8px;display:flex;gap:8px">
+    <button id="openOptions">⚙️ Options</button>
+    <button id="refresh">⟳ Rafraîchir</button>
+  </div>
+  <script src="popup.js"></script>
+  <script>
+    (function(){
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      function update(e){
+        const dark = e && typeof e.matches === 'boolean' ? e.matches : mq.matches;
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      }
+      try{ mq.addEventListener('change', update); }catch(e){ mq.addListener(update); }
+      update();
+    })();
+  </script>
+</body>
+</html>

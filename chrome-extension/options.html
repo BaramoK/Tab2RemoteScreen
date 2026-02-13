@@ -37,18 +37,30 @@
       <p class="small">Paramètres pour la connexion au serveur distant</p>
 
       <div class="form-row">
-        <label for="host">Adresse IP / Host</label>
-        <input id="host" class="input" placeholder="ex: 192.168.1.42:8080">
+        <label>Serveurs configurés</label>
+        <div id="serversList"></div>
+        <div class="note">Ajoutez plusieurs serveurs, nommez-les et sélectionnez-en un par défaut.</div>
+      </div>
+
+      <div class="form-row">
+        <label for="newName">Nom du serveur (optionnel)</label>
+        <input id="newName" class="input" placeholder="ex: Salon, Cuisine">
+      </div>
+
+      <div class="form-row">
+        <label for="newHost">Adresse IP / Host</label>
+        <input id="newHost" class="input" placeholder="ex: 192.168.1.42:8080">
         <div class="note">Indiquez l'adresse du serveur distant (inclure le port si nécessaire)</div>
       </div>
 
       <div class="form-row">
-        <label class="checkbox-row"><input type="checkbox" id="kiosk"> Ouvrir en mode kiosk par défaut</label>
-        <div class="note">Si activé, le navigateur ouvrira la fenêtre en plein écran.</div>
+        <label class="checkbox-row"><input type="checkbox" id="newKiosk"> Ouvrir en mode kiosk par défaut</label>
+        <div class="note">Si activé, le navigateur ouvrira la fenêtre en plein écran par défaut pour ce serveur.</div>
       </div>
 
       <div class="actions">
-        <button id="save" class="btn btn-primary">💾 Sauvegarder</button>
+        <button id="add" class="btn btn-secondary">➕ Ajouter</button>
+        <button id="saveAll" class="btn btn-primary">💾 Sauvegarder</button>
         <button id="reset" class="btn btn-secondary">Réinitialiser</button>
         <div id="status" class="status">✓ Enregistré</div>
       </div>
