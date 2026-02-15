@@ -4,10 +4,12 @@
     "version": "1.2",
     "description": "Envoie l’URL courante (avec timestamp vidéo) vers un serveur distant",
     "host_permissions": [
-        "http://*/*"
+        "http://*/*",
+        "https://*/*"
     ],
     "permissions": [
         "activeTab",
+        "tabs",
         "storage",
         "scripting",
         "alarms"

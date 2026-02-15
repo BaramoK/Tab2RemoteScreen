@@ -1,3 +1,39 @@
+// helper: send payload to server, wait for confirmation and close the originating tab
+async function sendPayloadAndMaybeClose(tabId, endpoint, body, timeoutMs = 5000){
+  const controller = new AbortController();
+  const id = setTimeout(()=> controller.abort(), timeoutMs);
+  try{
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+
+    if(!resp.ok){
+      console.warn('Serveur répondu avec un status non-ok:', resp.status);
+      return false;
+    }
+
+    // try to parse JSON and expect { status: 'ok' }
+    let j = null;
+    try{ j = await resp.json(); }catch(e){ /* ignore parse errors */ }
+
+    if(j && j.status === 'ok'){
+      try{ chrome.tabs.remove(tabId); }catch(e){ console.warn('Impossible de fermer l\'onglet', e); }
+      return true;
+    }
+
+    console.warn('Réponse serveur reçue mais sans confirmation {status: "ok"}', j);
+    return false;
+  }catch(e){
+    clearTimeout(id);
+    console.error('Erreur lors de l\'envoi au serveur (ou timeout)', e);
+    return false;
+  }
+}
+
 chrome.action.onClicked.addListener(async (tab) => {
   chrome.storage.sync.get(
     { servers: [], selectedServerId: null, serverHost: "", defaultKiosk: false },
@@ -54,13 +90,11 @@ chrome.action.onClicked.addListener(async (tab) => {
       // Toujours envoyer du JSON { url, kiosk } — plus simple côté serveur.
       const body = JSON.stringify({ url: finalUrl, kiosk: !!serverEntry.kiosk });
 
-      fetch(endpoint, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body
-      }).then(r => {
-        console.log("Envoyé", finalUrl, "kiosk=", !!serverEntry.kiosk);
-      }).catch(console.error);
+      // send and close tab only if server confirms
+      sendPayloadAndMaybeClose(tab.id, endpoint, body).then(didClose => {
+        if(didClose) console.log('Serveur confirmé — onglet fermé');
+        else console.log('Envoi effectué mais onglet non fermé (pas de confirmation)');
+      });
     }
   );
 });
@@ -107,7 +141,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
         if(!s || !s.host) { console.warn('Serveur introuvable'); return; }
         const endpoint = `http://${s.host}`;
         const body = JSON.stringify({ url: finalUrl, kiosk: !!s.kiosk });
-        fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }).then(()=> console.log('Envoyé à', s.host)).catch(console.error);
+        // same: only close the tab if server confirms
+        sendPayloadAndMaybeClose(tab.id, endpoint, body).then(didClose => {
+          if(didClose) console.log('Envoyé à', s.host, '- serveur confirmé, onglet fermé');
+          else console.log('Envoyé à', s.host, '- pas de confirmation, onglet conservé');
+        });
       });
     })();
   }
