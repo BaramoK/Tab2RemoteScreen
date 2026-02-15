@@ -45,6 +45,15 @@ chrome.storage.sync.get({ servers: [], selectedServerId: null }, (cfg) => {
   });
 });
 
+// load and persist the global "close on confirm" setting
+const closeOnConfirmEl = document.getElementById('closeOnConfirm');
+chrome.storage.sync.get({ closeOnConfirm: true }, (cfg) => {
+  closeOnConfirmEl.checked = !!cfg.closeOnConfirm;
+});
+closeOnConfirmEl.onchange = () => {
+  chrome.storage.sync.set({ closeOnConfirm: !!closeOnConfirmEl.checked }, () => showStatus());
+};
+
 addBtn.onclick = () => {
   const hostVal = newHost.value.trim(); if(!hostVal) return showStatus('Hôte requis');
   chrome.storage.sync.get({ servers: [] }, (cfg) => {
@@ -69,5 +78,6 @@ resetBtn.onclick = () => {
     showStatus('Réinitialisé');
   });
 };
+
 
 

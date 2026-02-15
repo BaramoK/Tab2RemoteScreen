@@ -21,8 +21,21 @@ async function sendPayloadAndMaybeClose(tabId, endpoint, body, timeoutMs = 5000)
     try{ j = await resp.json(); }catch(e){ /* ignore parse errors */ }
 
     if(j && j.status === 'ok'){
-      try{ chrome.tabs.remove(tabId); }catch(e){ console.warn('Impossible de fermer l\'onglet', e); }
-      return true;
+      // consult user preference: should we close the tab on confirm?
+      try{
+        const cfg = await new Promise(res => chrome.storage.sync.get({ closeOnConfirm: true }, res));
+        if(cfg.closeOnConfirm){
+          try{ chrome.tabs.remove(tabId); }catch(e){ console.warn('Impossible de fermer l\'onglet', e); }
+          return true;
+        } else {
+          console.log('Confirmation reçue mais préférence utilisateur: ne pas fermer l\'onglet.');
+          return false;
+        }
+      }catch(e){
+        console.warn('Erreur lecture préférence closeOnConfirm', e);
+        try{ chrome.tabs.remove(tabId); }catch(e){ /* ignore */ }
+        return true;
+      }
     }
 
     console.warn('Réponse serveur reçue mais sans confirmation {status: "ok"}', j);
