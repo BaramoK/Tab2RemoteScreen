@@ -9,6 +9,7 @@
  - Extension: make tab-closing behavior configurable in options (closeOnConfirm)
  - Extension: added https host permission and tabs permission to manifest
  - Repository: do not commit extension private key (Chromium_extension/Tab2RemoteScreen.pem); removed from repository and added to .gitignore
+ - Extension: show per-server online/offline indicator in popup (green/red dot) with /health check
 
 ## 2.0.0 - (unreleased)
 
