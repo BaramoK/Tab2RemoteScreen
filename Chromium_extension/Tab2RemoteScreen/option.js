@@ -22,13 +22,48 @@ function renderServers(servers, selectedId){
     row.style.display = 'flex'; row.style.gap = '8px'; row.style.alignItems = 'center';
     const label = document.createElement('div'); label.textContent = s.name ? `${s.name} (${s.host})` : s.host; label.style.flex = '1';
     const sel = document.createElement('input'); sel.type = 'radio'; sel.name = 'selected'; sel.checked = s.id === selectedId;
-    sel.onclick = () => { chrome.storage.sync.set({ selectedServerId: s.id }); };
+    sel.onclick = () => { 
+      // Persist selected server and update UI to reflect selection
+      chrome.storage.sync.set({ selectedServerId: s.id }, () => {
+        renderServers(servers, s.id);
+      });
+    };
     const del = document.createElement('button'); del.textContent = '✖'; del.style.background = 'transparent'; del.onclick = () => {
-      const idx = servers.findIndex(x=>x.id===s.id); if(idx>=0){ servers.splice(idx,1); renderServers(servers); }
+      // Remove server from list and persist change. If the removed server was selected,
+      // pick a new default (first server) or clear selection.
+      const idx = servers.findIndex(x=>x.id===s.id);
+      if(idx>=0){
+        const wasSelected = servers[idx].id === selectedId;
+        servers.splice(idx,1);
+        const newSelected = wasSelected ? (servers[0] ? servers[0].id : null) : selectedId;
+        chrome.storage.sync.set({ servers: servers, selectedServerId: newSelected }, () => {
+          renderServers(servers, newSelected);
+        });
+      }
     };
     row.appendChild(sel); row.appendChild(label); row.appendChild(del);
     serversListEl.appendChild(row);
   });
+
+  // After rendering list, populate the form fields for the selected server (if any)
+  const selected = (servers || []).find(x=>x.id === selectedId) || null;
+  populateForm(selected);
+}
+
+function populateForm(selectedServer){
+  if(selectedServer){
+    newName.value = selectedServer.name || '';
+    newHost.value = selectedServer.host || '';
+    newKiosk.checked = !!selectedServer.kiosk;
+    // per-server closeOnConfirm
+    const c = typeof selectedServer.closeOnConfirm === 'undefined' ? false : !!selectedServer.closeOnConfirm;
+    closeOnConfirmEl.checked = c;
+  } else {
+    newName.value = '';
+    newHost.value = '';
+    newKiosk.checked = false;
+    closeOnConfirmEl.checked = false;
+  }
 }
 
 chrome.storage.sync.get({ servers: [], selectedServerId: null }, (cfg) => {
@@ -45,39 +80,70 @@ chrome.storage.sync.get({ servers: [], selectedServerId: null }, (cfg) => {
   });
 });
 
-// load and persist the global "close on confirm" setting
+// per-server "close on confirm" checkbox
 const closeOnConfirmEl = document.getElementById('closeOnConfirm');
-chrome.storage.sync.get({ closeOnConfirm: true }, (cfg) => {
-  closeOnConfirmEl.checked = !!cfg.closeOnConfirm;
-});
 closeOnConfirmEl.onchange = () => {
-  chrome.storage.sync.set({ closeOnConfirm: !!closeOnConfirmEl.checked }, () => showStatus());
+  // Persist change to the currently selected server
+  chrome.storage.sync.get({ servers: [], selectedServerId: null }, (cfg) => {
+    const selId = cfg.selectedServerId;
+    if(!selId) return showStatus();
+    const idx = (cfg.servers || []).findIndex(x=>x.id === selId);
+    if(idx >= 0){
+      cfg.servers[idx].closeOnConfirm = !!closeOnConfirmEl.checked;
+      chrome.storage.sync.set({ servers: cfg.servers }, () => {
+        renderServers(cfg.servers, selId);
+        showStatus('Enregistré');
+      });
+    }
+  });
 };
 
 addBtn.onclick = () => {
   const hostVal = newHost.value.trim(); if(!hostVal) return showStatus('Hôte requis');
   chrome.storage.sync.get({ servers: [] }, (cfg) => {
-    const s = { id: makeId(), name: newName.value.trim(), host: hostVal, kiosk: !!newKiosk.checked };
+    const s = { id: makeId(), name: newName.value.trim(), host: hostVal, kiosk: !!newKiosk.checked, closeOnConfirm: !!closeOnConfirmEl.checked };
     cfg.servers.push(s);
-    chrome.storage.sync.set({ servers: cfg.servers }, () => {
-      renderServers(cfg.servers);
-      newName.value = ''; newHost.value = ''; newKiosk.checked = false;
+    // Persist the new server and select it
+    chrome.storage.sync.set({ servers: cfg.servers, selectedServerId: s.id }, () => {
+      renderServers(cfg.servers, s.id);
       showStatus('Ajouté');
     });
   });
 };
 
 saveAllBtn.onclick = () => {
-  // Nothing special — servers are already saved on add/delete; but ensure status
-  showStatus();
+  // If a server is selected, update its values. Otherwise just show status.
+  chrome.storage.sync.get({ servers: [], selectedServerId: null }, (cfg) => {
+    const selId = cfg.selectedServerId;
+    if(selId){
+      const idx = (cfg.servers || []).findIndex(x=>x.id === selId);
+      if(idx >= 0){
+        cfg.servers[idx].name = newName.value.trim();
+        cfg.servers[idx].host = newHost.value.trim();
+        cfg.servers[idx].kiosk = !!newKiosk.checked;
+        cfg.servers[idx].closeOnConfirm = !!closeOnConfirmEl.checked;
+        chrome.storage.sync.set({ servers: cfg.servers }, () => {
+          renderServers(cfg.servers, selId);
+          showStatus('Enregistré');
+        });
+        return;
+      }
+    }
+    showStatus();
+  });
 };
 
 resetBtn.onclick = () => {
   chrome.storage.sync.set({ servers: [], selectedServerId: null, serverHost: '' }, () => {
     renderServers([]);
+    populateForm(null);
     showStatus('Réinitialisé');
   });
 };
+
+
+
+
 
 
 

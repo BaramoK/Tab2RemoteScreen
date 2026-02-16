@@ -1,5 +1,7 @@
 // helper: send payload to server, wait for confirmation and close the originating tab
-async function sendPayloadAndMaybeClose(tabId, endpoint, body, timeoutMs = 5000){
+// closeOnConfirm (boolean) is a per-server preference; if omitted we'll fall back to the
+// previous global preference in storage to remain backwards compatible.
+async function sendPayloadAndMaybeClose(tabId, endpoint, body, timeoutMs = 5000, closeOnConfirm){
   const controller = new AbortController();
   const id = setTimeout(()=> controller.abort(), timeoutMs);
   try{
@@ -21,16 +23,19 @@ async function sendPayloadAndMaybeClose(tabId, endpoint, body, timeoutMs = 5000)
     try{ j = await resp.json(); }catch(e){ /* ignore parse errors */ }
 
     if(j && j.status === 'ok'){
-      // consult user preference: should we close the tab on confirm?
+      // If caller provided a per-server preference use it. Otherwise fall back to the
+      // legacy global preference stored in chrome.storage.sync.
+      if(typeof closeOnConfirm === 'boolean'){
+        if(closeOnConfirm){ try{ chrome.tabs.remove(tabId); }catch(e){ console.warn('Impossible de fermer l\'onglet', e); } return true; }
+        console.log('Confirmation reçue mais préférence serveur: ne pas fermer l\'onglet.');
+        return false;
+      }
+
+      // fallback to legacy behaviour
       try{
         const cfg = await new Promise(res => chrome.storage.sync.get({ closeOnConfirm: true }, res));
-        if(cfg.closeOnConfirm){
-          try{ chrome.tabs.remove(tabId); }catch(e){ console.warn('Impossible de fermer l\'onglet', e); }
-          return true;
-        } else {
-          console.log('Confirmation reçue mais préférence utilisateur: ne pas fermer l\'onglet.');
-          return false;
-        }
+        if(cfg.closeOnConfirm){ try{ chrome.tabs.remove(tabId); }catch(e){ console.warn('Impossible de fermer l\'onglet', e); } return true; }
+        else { console.log('Confirmation reçue mais préférence utilisateur globale: ne pas fermer l\'onglet.'); return false; }
       }catch(e){
         console.warn('Erreur lecture préférence closeOnConfirm', e);
         try{ chrome.tabs.remove(tabId); }catch(e){ /* ignore */ }
@@ -49,7 +54,7 @@ async function sendPayloadAndMaybeClose(tabId, endpoint, body, timeoutMs = 5000)
 
 chrome.action.onClicked.addListener(async (tab) => {
   chrome.storage.sync.get(
-    { servers: [], selectedServerId: null, serverHost: "", defaultKiosk: false },
+    { servers: [], selectedServerId: null, serverHost: "", defaultKiosk: false, closeOnConfirm: true },
     async (config) => {
 
       let finalUrl = tab.url;
@@ -89,8 +94,10 @@ chrome.action.onClicked.addListener(async (tab) => {
       let serverEntry = null;
       if (config.servers && config.servers.length > 0) {
         serverEntry = config.servers.find(s => s.id === config.selectedServerId) || config.servers[0];
+        // ensure serverEntry has closeOnConfirm property (fallback to global if missing)
+        if(typeof serverEntry.closeOnConfirm === 'undefined') serverEntry.closeOnConfirm = !!config.closeOnConfirm;
       } else if (config.serverHost) {
-        serverEntry = { host: config.serverHost, kiosk: config.defaultKiosk };
+        serverEntry = { host: config.serverHost, kiosk: config.defaultKiosk, closeOnConfirm: !!config.closeOnConfirm };
       }
 
       if (!serverEntry || !serverEntry.host) {
@@ -104,7 +111,7 @@ chrome.action.onClicked.addListener(async (tab) => {
       const body = JSON.stringify({ url: finalUrl, kiosk: !!serverEntry.kiosk });
 
       // send and close tab only if server confirms
-      sendPayloadAndMaybeClose(tab.id, endpoint, body).then(didClose => {
+      sendPayloadAndMaybeClose(tab.id, endpoint, body, 5000, !!serverEntry.closeOnConfirm).then(didClose => {
         if(didClose) console.log('Serveur confirmé — onglet fermé');
         else console.log('Envoi effectué mais onglet non fermé (pas de confirmation)');
       });
@@ -154,8 +161,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
         if(!s || !s.host) { console.warn('Serveur introuvable'); return; }
         const endpoint = `http://${s.host}`;
         const body = JSON.stringify({ url: finalUrl, kiosk: !!s.kiosk });
-        // same: only close the tab if server confirms
-        sendPayloadAndMaybeClose(tab.id, endpoint, body).then(didClose => {
+        // same: only close the tab if server confirms (use server-specific preference)
+        sendPayloadAndMaybeClose(tab.id, endpoint, body, 5000, !!s.closeOnConfirm).then(didClose => {
           if(didClose) console.log('Envoyé à', s.host, '- serveur confirmé, onglet fermé');
           else console.log('Envoyé à', s.host, '- pas de confirmation, onglet conservé');
         });
