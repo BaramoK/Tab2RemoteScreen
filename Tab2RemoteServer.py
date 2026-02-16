@@ -245,6 +245,75 @@ class Handler(BaseHTTPRequestHandler):
             if not kiosk and getattr(self.server, "default_kiosk", False):
                 kiosk = True
 
+            # If client requested streamlink usage AND the URL is a Twitch URL,
+            # launch streamlink + mpv instead. Otherwise fall back to Chromium.
+            use_streamlink = bool(payload.get("useStreamlink", False)) if payload is not None else False
+            is_twitch = False
+            try:
+                parsed_url = urlparse(url)
+                hostname = (parsed_url.hostname or "").lower()
+                is_twitch = "twitch.tv" in hostname
+            except Exception:
+                is_twitch = False
+
+            if use_streamlink and is_twitch:
+                print(f"[STREAM] launching streamlink for {url!r}")
+                # Check availability
+                sl_path = shutil.which("streamlink")
+                mpv_path = shutil.which("mpv")
+                if not sl_path:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "streamlink not found on server"}).encode("utf-8"))
+                    return
+                if not mpv_path:
+                    # streamlink can use -p mpv even if mpv not found; but warn and fail for clarity
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mpv not found on server"}).encode("utf-8"))
+                    return
+
+                # Launch streamlink with mpv player; detach process so server keeps running
+                try:
+                    # Use -p to specify player; request best quality
+                    cmd = [sl_path, url, "best", "-p", mpv_path]
+
+                    # Ensure player process inherits a display/Wayland env so mpv can open a window
+                    env = os.environ.copy()
+                    display = getattr(self.server.chromium_mgr, 'display', None)
+                    use_wayland = getattr(self.server.chromium_mgr, 'use_wayland', True)
+                    if display is not None:
+                        env['DISPLAY'] = display
+                    if use_wayland:
+                        # Prefer existing environment values when present (e.g. when
+                        # server is started from a user session). Otherwise fall back
+                        # to the current user's runtime dir (/run/user/<uid>) which is
+                        # the common location for the Wayland socket.
+                        env.setdefault('XDG_RUNTIME_DIR', os.environ.get('XDG_RUNTIME_DIR') or f"/run/user/{os.getuid()}")
+                        env.setdefault('WAYLAND_DISPLAY', os.environ.get('WAYLAND_DISPLAY', 'wayland-0'))
+
+                    subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    action = "streamlink-started"
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": f"failed to launch streamlink: {e!s}"}).encode("utf-8"))
+                    return
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "ok", "action": action, "url": url}).encode("utf-8"))
+                return
+
+            if use_streamlink and not is_twitch:
+                # Client requested streamlink but URL is not Twitch: ignore and fallback
+                print(f"[STREAM] useStreamlink requested but URL is not Twitch ({url!r}); falling back to Chromium")
+
+            # Fallback: open in Chromium as before
             result = self.server.chromium_mgr.open_url(url, kiosk=kiosk)
 
             self.send_response(200)

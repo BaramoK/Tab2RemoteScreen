@@ -58,11 +58,15 @@ function populateForm(selectedServer){
     // per-server closeOnConfirm
     const c = typeof selectedServer.closeOnConfirm === 'undefined' ? false : !!selectedServer.closeOnConfirm;
     closeOnConfirmEl.checked = c;
+    // per-server streamlink option
+    const s = typeof selectedServer.useStreamlink === 'undefined' ? false : !!selectedServer.useStreamlink;
+    newStreamlinkEl.checked = s;
   } else {
     newName.value = '';
     newHost.value = '';
     newKiosk.checked = false;
     closeOnConfirmEl.checked = false;
+    newStreamlinkEl.checked = false;
   }
 }
 
@@ -98,10 +102,28 @@ closeOnConfirmEl.onchange = () => {
   });
 };
 
+// per-server "use streamlink" checkbox
+const newStreamlinkEl = document.getElementById('newStreamlink');
+newStreamlinkEl.onchange = () => {
+  chrome.storage.sync.get({ servers: [], selectedServerId: null }, (cfg) => {
+    const selId = cfg.selectedServerId;
+    if(!selId) return showStatus();
+    const idx = (cfg.servers || []).findIndex(x=>x.id === selId);
+    if(idx >= 0){
+      cfg.servers[idx].useStreamlink = !!newStreamlinkEl.checked;
+      chrome.storage.sync.set({ servers: cfg.servers }, () => {
+        renderServers(cfg.servers, selId);
+        showStatus('Enregistré');
+      });
+    }
+  });
+};
+
 addBtn.onclick = () => {
   const hostVal = newHost.value.trim(); if(!hostVal) return showStatus('Hôte requis');
   chrome.storage.sync.get({ servers: [] }, (cfg) => {
     const s = { id: makeId(), name: newName.value.trim(), host: hostVal, kiosk: !!newKiosk.checked, closeOnConfirm: !!closeOnConfirmEl.checked };
+    s.useStreamlink = !!newStreamlinkEl.checked;
     cfg.servers.push(s);
     // Persist the new server and select it
     chrome.storage.sync.set({ servers: cfg.servers, selectedServerId: s.id }, () => {
@@ -122,6 +144,7 @@ saveAllBtn.onclick = () => {
         cfg.servers[idx].host = newHost.value.trim();
         cfg.servers[idx].kiosk = !!newKiosk.checked;
         cfg.servers[idx].closeOnConfirm = !!closeOnConfirmEl.checked;
+        cfg.servers[idx].useStreamlink = !!newStreamlinkEl.checked;
         chrome.storage.sync.set({ servers: cfg.servers }, () => {
           renderServers(cfg.servers, selId);
           showStatus('Enregistré');
@@ -140,6 +163,7 @@ resetBtn.onclick = () => {
     showStatus('Réinitialisé');
   });
 };
+
 
 
 

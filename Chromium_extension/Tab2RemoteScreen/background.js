@@ -108,7 +108,8 @@ chrome.action.onClicked.addListener(async (tab) => {
       const endpoint = `http://${serverEntry.host}`;
 
       // Toujours envoyer du JSON { url, kiosk } — plus simple côté serveur.
-      const body = JSON.stringify({ url: finalUrl, kiosk: !!serverEntry.kiosk });
+      // include per-server flag useStreamlink when present
+      const body = JSON.stringify({ url: finalUrl, kiosk: !!serverEntry.kiosk, useStreamlink: !!serverEntry.useStreamlink });
 
       // send and close tab only if server confirms
       sendPayloadAndMaybeClose(tab.id, endpoint, body, 5000, !!serverEntry.closeOnConfirm).then(didClose => {
@@ -160,7 +161,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResp) => {
         const s = (cfg.servers || []).find(x => x.id === msg.id);
         if(!s || !s.host) { console.warn('Serveur introuvable'); return; }
         const endpoint = `http://${s.host}`;
-        const body = JSON.stringify({ url: finalUrl, kiosk: !!s.kiosk });
+        const body = JSON.stringify({ url: finalUrl, kiosk: !!s.kiosk, useStreamlink: !!s.useStreamlink });
         // same: only close the tab if server confirms (use server-specific preference)
         sendPayloadAndMaybeClose(tab.id, endpoint, body, 5000, !!s.closeOnConfirm).then(didClose => {
           if(didClose) console.log('Envoyé à', s.host, '- serveur confirmé, onglet fermé');
