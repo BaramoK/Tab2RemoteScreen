@@ -206,6 +206,7 @@ https://www.youtube.com/watch?v=xxxx&t=127s
 ---
 ## 🚀 Roadmap
 
+- Per-server preferences in extension (done: close-on-confirm)
 - Play/pause synchronization
 - Multi‑screen synchronization
 - Authentication token support

@@ -13,6 +13,10 @@
     .list{display:flex;flex-direction:column;gap:8px}
     .item{display:flex;align-items:center;gap:8px;background:var(--card);padding:8px;border-radius:8px}
     .host{flex:1}
+    .status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:8px;flex: none}
+    .status-dot.unknown{background:#9ca3af}
+    .status-dot.online{background:#10b981}
+    .status-dot.offline{background:#ef4444}
     button{padding:6px 8px;border-radius:6px;border:0;cursor:pointer}
     .primary{background:var(--accent);color:#fff}
   </style>

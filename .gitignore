@@ -1,2 +1,4 @@
 server_err.log
 server_out.log
+# Private extension signing key (should not be committed)
+Chromium_extension/Tab2RemoteScreen.pem
