@@ -204,7 +204,6 @@ https://www.youtube.com/watch?v=xxxx&t=127s
 - If you expose the server externally, consider binding to 127.0.0.1 behind a reverse proxy, or implement a token header.
 
 ---
-
 ## 🚀 Roadmap
 
 - Play/pause synchronization
