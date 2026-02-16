@@ -15,6 +15,7 @@ It supports transferring video timestamps when possible so playback resumes at t
 ## ✨ Features
 
 - 🚀 One‑click send from Chrome
+- 🤹 Multi target configuration (Per-server preferences in extension)
 - ⏱ Keeps video playback time when available
 - 🧠 Single‑window or multi‑window Chromium control
 - 🌐 Lightweight HTTP server (no external framework)
@@ -206,7 +207,6 @@ https://www.youtube.com/watch?v=xxxx&t=127s
 ---
 ## 🚀 Roadmap
 
-- Per-server preferences in extension (done: close-on-confirm)
 - Play/pause synchronization
 - Multi‑screen synchronization
 - Authentication token support
