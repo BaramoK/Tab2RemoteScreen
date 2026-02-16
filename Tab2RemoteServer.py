@@ -78,8 +78,16 @@ class ChromiumManager:
 
     def _launch(self, url: str, kiosk: bool = False) -> subprocess.Popen:
         env = os.environ.copy()
+        # set DISPLAY if requested (keep empty meaning "do not set")
         if self.display is not None:
             env["DISPLAY"] = self.display
+
+        # When using Wayland, ensure common Wayland-related env vars are set so
+        # Chromium can connect to the compositor. If the user already set these
+        # variables in the environment, respect them.
+        if self.use_wayland:
+            env.setdefault("XDG_RUNTIME_DIR", "/run/user/1000")
+            env.setdefault("WAYLAND_DISPLAY", "wayland-0")
 
         cmd = [self.chromium_path]
 

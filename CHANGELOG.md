@@ -5,6 +5,7 @@
 - Rename server script: receiver_to_chromium_v2.py -> Tab2RemoteServer.py
 - Update README and examples to reference Tab2RemoteServer.py
  - Rename chrome-extension folder to Tab2RemoteScreen and update artifacts (Tab2RemoteScreen.crx/.pem)
+ - Server: when Wayland is used, set XDG_RUNTIME_DIR=/run/user/1000 and WAYLAND_DISPLAY=wayland-0 if not present
  - Extension: only close originating tab after server confirmation (server must return {"status":"ok"})
  - Extension: make tab-closing behavior configurable in options (closeOnConfirm)
  - Extension: make tab-closing behavior configurable per-server in options (closeOnConfirm)
